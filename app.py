@@ -1,6 +1,7 @@
 import streamlit as st
 from PIL import Image
 import matplotlib.pyplot as plt
+import japanize_matplotlib
 import numpy as np
 import streamlit.components.v1 as components
 import csv
@@ -16,7 +17,6 @@ from openai import OpenAI
 
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-plt.rcParams["font.family"] = "Meiryo"
 plt.rcParams["axes.unicode_minus"] = False
 
 USE_MOCK_DATA = False
