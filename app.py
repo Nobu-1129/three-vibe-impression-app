@@ -798,10 +798,8 @@ div[data-testid="stFileUploader"] {
 
 uploaded_file = st.file_uploader("", type=["png", "jpg", "jpeg"])
 
-st.caption("この画像の「ココ見てほしい！」を入力してください。※空欄でも印象値には影響しません")
-
 focus_point = st.text_area(
-    "ココ見てほしい",
+    "この画像の「ココ見てほしい！」を入力してください\n※空欄でも印象値には影響しません",
     placeholder="例：アピールポイント、全体の配色、手作り感、高級感、かわいさ など",
     height=80
 )
