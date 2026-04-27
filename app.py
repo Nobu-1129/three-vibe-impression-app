@@ -800,7 +800,7 @@ uploaded_file = st.file_uploader("", type=["png", "jpg", "jpeg"])
 
 focus_point = st.text_area(
     "ココ見てほしい",
-    placeholder="例：断面のジューシーさ、全体の配色、手作り感、高級感、かわいさ など",
+    placeholder="例：アピールポイント、全体の配色、手作り感、高級感、かわいさ など",
     height=80
 )
 
