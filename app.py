@@ -686,6 +686,8 @@ def save_result_to_supabase(
     character_scores: dict,
     character_comments: dict,
     axis_scores: dict,
+    poster_name: str,
+    free_comment: str,
 ):
     file_ext = uploaded_file_name.split(".")[-1].lower() if "." in uploaded_file_name else "jpg"
     file_name = f"{uuid4()}.{file_ext}"
@@ -711,6 +713,8 @@ def save_result_to_supabase(
         "is_public": False,
         "is_featured": False,
         "lang": "ja",
+        "poster_name": poster_name,
+        "free_comment": free_comment,
     }
 
     supabase.table("image_evaluations").insert(row_data).execute()
@@ -798,6 +802,17 @@ div[data-testid="stFileUploader"] {
 
 uploaded_file = st.file_uploader("", type=["png", "jpg", "jpeg"])
 
+poster_name = st.text_input(
+    "投稿者名",
+    placeholder="例：Taro、Jony、photo_life、illustration_mika など"
+)
+
+free_comment = st.text_area(
+    "フリーコメント",
+    placeholder="例：色の組み合わせと全体の雰囲気を見ていただけるとうれしいです。",
+    height=80
+)
+
 focus_point = st.text_area(
     "この画像の「ココ見てほしい！」を入力してください\n※空欄でも印象値には影響しません",
     placeholder="例：アピールポイント、全体の配色、手作り感、高級感、かわいさ など",
@@ -835,6 +850,8 @@ if uploaded_file is not None:
         st.session_state["uploaded_file_name"] = uploaded_file.name
         st.session_state["focus_point"] = focus_point
         st.session_state["prepared_image_bytes"] = prepared_image_bytes
+        st.session_state["poster_name"] = poster_name
+        st.session_state["free_comment"] = free_comment
 
     if "axis_scores" in st.session_state:
         axis_scores = st.session_state["axis_scores"]
@@ -1194,6 +1211,8 @@ if uploaded_file is not None:
                     character_scores=character_scores,
                     character_comments=character_comments,
                     axis_scores=axis_scores,
+                    poster_name=st.session_state.get("poster_name", ""),
+                    free_comment=st.session_state.get("free_comment", ""),
                 )
 
                 st.success("Supabase に保存しました。")
