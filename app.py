@@ -631,6 +631,20 @@ def render_8axis_bar_chart(axis_scores: dict):
     full_html = "".join(html_parts)
     components.html(full_html, height=700, scrolling=False)
 
+def is_admin_mode() -> bool:
+    st.markdown("### 管理者メニュー")
+
+    entered_password = st.text_input(
+        "管理者パスワード",
+        type="password",
+        key="admin_password_input"
+    )
+
+    if not entered_password:
+        return False
+
+    return entered_password == st.secrets.get("ADMIN_PASSWORD", "")
+
 def get_mock_analysis_data():
     axis_scores = {
         "地味 ↔ 映える": 3,
@@ -1030,7 +1044,7 @@ if uploaded_file is not None:
 """)
 
         full_comment_html = "".join(comment_html_parts)
-        components.html(full_comment_html, height=500, scrolling=False)
+        components.html(full_comment_html, height=600, scrolling=False)
 
         show_advice = st.checkbox("アドバイスも見る")
 
@@ -1147,14 +1161,15 @@ if uploaded_file is not None:
 
         st.divider()
 
-        st.subheader("保存履歴")
+        if is_admin_mode():
+            st.subheader("保存履歴")
 
-        history_file = "results_2nd.csv"
+            history_file = "results_2nd.csv"
 
-        if os.path.exists(history_file):
-            history_df = pd.read_csv(history_file, encoding="utf-8-sig")
-            st.dataframe(history_df, use_container_width=True)
-        else:
-            st.info("まだ保存履歴はありません。")
+            if os.path.exists(history_file):
+                history_df = pd.read_csv(history_file, encoding="utf-8-sig")
+                st.dataframe(history_df, use_container_width=True)
+            else:
+                st.info("まだ保存履歴はありません。")
 
         st.divider()
