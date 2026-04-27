@@ -12,8 +12,14 @@ import json
 import base64
 import os
 from openai import OpenAI
+from supabase import create_client, Client
+from uuid import uuid4
 
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+supabase: Client = create_client(
+    st.secrets["SUPABASE_URL"],
+    st.secrets["SUPABASE_SERVICE_ROLE_KEY"],
+)
 
 plt.rcParams["axes.unicode_minus"] = False
 
@@ -645,6 +651,45 @@ def is_admin_mode() -> bool:
 
     return entered_password == st.secrets.get("ADMIN_PASSWORD", "")
 
+def save_result_to_supabase(
+    image_bytes: bytes,
+    uploaded_file_name: str,
+    share_title: str,
+    top_character_name: str,
+    three_vis: int,
+    appeal_targets,
+    character_scores: dict,
+    character_comments: dict,
+    axis_scores: dict,
+):
+    file_ext = uploaded_file_name.split(".")[-1].lower() if "." in uploaded_file_name else "jpg"
+    file_name = f"{uuid4()}.{file_ext}"
+    storage_path = f"uploads/{file_name}"
+
+    # 画像を Storage に保存
+    supabase.storage.from_("evaluation-images").upload(
+        path=storage_path,
+        file=image_bytes,
+        file_options={"content-type": "image/jpeg"}
+    )
+
+    # DB に保存
+    row_data = {
+        "share_title": share_title,
+        "three_vis": three_vis,
+        "appeal_targets": appeal_targets,
+        "comment_jin": character_comments["おじさん"],
+        "comment_reina": character_comments["ギャル"],
+        "comment_takumi": character_comments["モデラー"],
+        "axis_scores_json": axis_scores,
+        "image_path": storage_path,
+        "is_public": False,
+        "is_featured": False,
+        "lang": "ja",
+    }
+
+    supabase.table("image_evaluations").insert(row_data).execute()
+
 def get_mock_analysis_data():
     axis_scores = {
         "地味 ↔ 映える": 3,
@@ -1105,60 +1150,24 @@ if uploaded_file is not None:
         st.subheader("保存")
 
         if st.button("結果を保存"):
-            save_file = "results_2nd.csv"
-            image_save_dir = "saved_images_2nd"
-
-            os.makedirs(image_save_dir, exist_ok=True)
-
-            timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-            image_base_name, _ = os.path.splitext(st.session_state["uploaded_file_name"])
-            saved_image_name = f"{image_base_name}_{timestamp_str}.jpg"
-            saved_image_path = os.path.join(image_save_dir, saved_image_name)
-
             try:
-                with open(saved_image_path, "wb") as img_f:
-                    img_f.write(st.session_state["prepared_image_bytes"])
+                save_result_to_supabase(
+                    image_bytes=st.session_state["prepared_image_bytes"],
+                    uploaded_file_name=st.session_state["uploaded_file_name"],
+                    share_title=share_title,
+                    top_character_name=top_character_name,
+                    three_vis=three_vis,
+                    appeal_targets=appeal_targets,
+                    character_scores=character_scores,
+                    character_comments=character_comments,
+                    axis_scores=axis_scores,
+                )
 
-                row_data = {
-                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    "image_name": st.session_state["uploaded_file_name"],
-                    "saved_image_path": saved_image_path,
-                    "share_title": share_title,
-                    "title_named_by": top_character_name,
-                    "three_vis": three_vis,
-                    "appeal_targets": " / ".join(appeal_targets),
-
-                    "ジンさん_score": character_scores["おじさん"],
-                    "レイナ_score": character_scores["ギャル"],
-                    "タクミ_score": character_scores["モデラー"],
-
-                    "ジンさん_comment": character_comments["おじさん"],
-                    "レイナ_comment": character_comments["ギャル"],
-                    "タクミ_comment": character_comments["モデラー"],
-                }
-
-                for axis_name, score in axis_scores.items():
-                    row_data[axis_name] = score
-
-                file_exists = os.path.exists(save_file)
-
-                with open(save_file, mode="a", newline="", encoding="utf-8-sig") as f:
-                    writer = csv.DictWriter(f, fieldnames=row_data.keys())
-
-                    if not file_exists:
-                        writer.writeheader()
-
-                    writer.writerow(row_data)
-
-                st.success(f"保存しました：{save_file}")
-                st.info(f"画像も保存しました：{saved_image_path}")
-
-            except PermissionError:
-                st.error(f"保存できませんでした。{save_file} がExcelなどで開かれていないか確認してください。")
+                st.success("Supabase に保存しました。")
+                st.info("画像と評価結果を保存しました。")
 
             except Exception as e:
                 st.error(f"保存中にエラーが発生しました: {e}")
-
         st.divider()
 
         if is_admin_mode():
