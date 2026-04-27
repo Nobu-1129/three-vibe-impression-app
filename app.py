@@ -8,7 +8,6 @@ import csv
 import io
 from datetime import datetime
 import pandas as pd
-import shutil
 import json
 import base64
 import mimetypes
