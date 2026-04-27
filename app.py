@@ -402,6 +402,15 @@ def plot_8axis_radar(axis_scores: dict):
 
     return fig
 
+def load_history_from_supabase():
+    result = (
+        supabase.table("image_evaluations")
+        .select("*")
+        .order("created_at", desc=True)
+        .execute()
+    )
+    return pd.DataFrame(result.data)
+
 def analyze_image_with_ai(image_bytes):
     if USE_MOCK_DATA:
         return get_mock_analysis_data()
@@ -1173,10 +1182,9 @@ if uploaded_file is not None:
         if is_admin_mode():
             st.subheader("保存履歴")
 
-            history_file = "results_2nd.csv"
+            history_df = load_history_from_supabase()
 
-            if os.path.exists(history_file):
-                history_df = pd.read_csv(history_file, encoding="utf-8-sig")
+            if not history_df.empty:
                 st.dataframe(history_df, use_container_width=True)
             else:
                 st.info("まだ保存履歴はありません。")
