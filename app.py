@@ -86,6 +86,12 @@ SECOND_PROJECT_PROMPT = """
 - 派手な画像を「良い」と短絡しないでください。
 - 8軸のスコアは、見た目の勢いだけでなく、構図・色・質感・文脈から総合的に判断してください。
 
+【投稿者が見てほしいポイントについて】
+- 投稿者から「ココ見てほしい」が指定されている場合は、その内容を補助情報として参考にしてください。
+- ただし、画像そのものから読み取れる印象を最優先し、無理に投稿者の意図に合わせすぎないでください。
+- 画像から確認できる範囲で、3人のコメントやタイトルにやわらかく反映してください。
+- スコアは画像自体の印象を基本とし、投稿者コメントに過剰に引っ張られないようにしてください。
+
 【8つの評価軸】
 各軸を -5 〜 +5 の整数で評価してください。
 -5 は左側の印象がかなり強い
@@ -411,12 +417,22 @@ def load_history_from_supabase():
     )
     return pd.DataFrame(result.data)
 
-def analyze_image_with_ai(image_bytes):
+def analyze_image_with_ai(image_bytes, focus_point=""):
     if USE_MOCK_DATA:
         return get_mock_analysis_data()
 
     base64_image = base64.b64encode(image_bytes).decode("utf-8")
     data_url = f"data:image/jpeg;base64,{base64_image}"
+
+    extra_focus_prompt = ""
+    if focus_point and focus_point.strip():
+        extra_focus_prompt = f"""
+
+【投稿者が見てほしいポイント】
+{focus_point.strip()}
+"""
+
+    full_prompt = SECOND_PROJECT_PROMPT + extra_focus_prompt
 
     response = client.responses.create(
         model="gpt-5.4-mini",
@@ -424,7 +440,7 @@ def analyze_image_with_ai(image_bytes):
             {
                 "role": "user",
                 "content": [
-                    {"type": "input_text", "text": SECOND_PROJECT_PROMPT},
+                    {"type": "input_text", "text": full_prompt},
                     {"type": "input_image", "image_url": data_url},
                 ],
             }
@@ -782,6 +798,12 @@ div[data-testid="stFileUploader"] {
 
 uploaded_file = st.file_uploader("", type=["png", "jpg", "jpeg"])
 
+focus_point = st.text_area(
+    "ココ見てほしい",
+    placeholder="例：断面のジューシーさ、全体の配色、手作り感、高級感、かわいさ など",
+    height=80
+)
+
 if uploaded_file is not None:
     prepared_image_bytes = prepare_image_for_app(uploaded_file, max_size_kb=500)
     display_image = Image.open(io.BytesIO(prepared_image_bytes))
@@ -790,7 +812,7 @@ if uploaded_file is not None:
 
     if st.button("AIで評価する"):
         try:
-            axis_scores, character_comments, character_advice, share_title, appeal_targets = analyze_image_with_ai(prepared_image_bytes)
+            axis_scores, character_comments, character_advice, share_title, appeal_targets = analyze_image_with_ai(prepared_image_bytes, focus_point)
             character_scores, true_score, three_vis = calculate_character_scores(axis_scores)
 
             st.success("AI評価を実行しました。")
@@ -811,6 +833,7 @@ if uploaded_file is not None:
         st.session_state["true_score"] = true_score
         st.session_state["three_vis"] = three_vis
         st.session_state["uploaded_file_name"] = uploaded_file.name
+        st.session_state["focus_point"] = focus_point
         st.session_state["prepared_image_bytes"] = prepared_image_bytes
 
     if "axis_scores" in st.session_state:
@@ -822,6 +845,7 @@ if uploaded_file is not None:
         character_scores = st.session_state["character_scores"]
         true_score = st.session_state["true_score"]
         three_vis = st.session_state["three_vis"]
+        focus_point = st.session_state.get("focus_point", "")
 
         top_character_name = get_top_character_name(character_scores)
 
