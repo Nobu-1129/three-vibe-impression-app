@@ -26,6 +26,8 @@
 ├── app.py
 ├── requirements.txt
 └── assets/
+```
+
 
 app.py : Streamlit アプリ本体
 requirements.txt : Community Cloud / ローカル実行用の依存パッケージ

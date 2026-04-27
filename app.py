@@ -10,7 +10,6 @@ from datetime import datetime
 import pandas as pd
 import json
 import base64
-import mimetypes
 import os
 from openai import OpenAI
 
@@ -427,30 +426,6 @@ def analyze_image_with_ai(image_bytes):
     appeal_targets = data["appeal_targets"]
 
     return axis_scores, character_comments, character_advice, share_title, appeal_targets
-
-    # MIMEタイプを推定
-    mime_type = uploaded_file.type
-    if not mime_type:
-        mime_type = mimetypes.guess_type(uploaded_file.name)[0] or "image/jpeg"
-
-    data_url = f"data:{mime_type};base64,{base64_image}"
-
-    response = client.responses.create(
-        model="gpt-5.4-mini",
-        input=[
-            {
-                "role": "user",
-                "content": [
-                    {"type": "input_text", "text": SCORING_PROMPT},
-                    {"type": "input_image", "image_url": data_url},
-                ],
-            }
-        ],
-    )
-
-    response_text = response.output_text
-    data = json.loads(response_text)
-    return data["scores"]
 
 def plot_16axis_radar_from_8axis(axis_scores: dict):
     # 8軸ペア
