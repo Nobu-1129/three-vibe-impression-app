@@ -1198,7 +1198,7 @@ if uploaded_file is not None:
 """)
 
         full_comment_html = "".join(comment_html_parts)
-        components.html(full_comment_html, height=1000, scrolling=False)
+        components.html(full_comment_html, height=1200, scrolling=False)
   
         show_advice = st.checkbox("アドバイスも見る")
 
