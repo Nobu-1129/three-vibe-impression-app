@@ -1169,16 +1169,8 @@ if uploaded_file is not None:
 """)
 
         full_comment_html = "".join(comment_html_parts)
-
-        comment_text_total = (
-            len(str(result["character comments"].get("おじさん", "")))
-            + len(str(result["character comments"].get("ギャル", "")))
-            + len(str(result["character comments"].get("モデラー", "")))
-        )
-
-        comment_area_height = max(900, min(1500, 620 + (comment_text_total // 10) * 22))
-        components.html(full_comment_html, height=comment_area_height, scrolling=False)
-
+        components.html(full_comment_html, height=1000, scrolling=False)
+  
         show_advice = st.checkbox("アドバイスも見る")
 
         if show_advice:
