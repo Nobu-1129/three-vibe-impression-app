@@ -87,10 +87,13 @@ SECOND_PROJECT_PROMPT = """
 - 8軸のスコアは、見た目の勢いだけでなく、構図・色・質感・文脈から総合的に判断してください。
 
 【投稿者が見てほしいポイントについて】
-- 投稿者から「ココ見てほしい」が指定されている場合は、その内容を補助情報として参考にしてください。
-- ただし、画像そのものから読み取れる印象を最優先し、無理に投稿者の意図に合わせすぎないでください。
-- 画像から確認できる範囲で、3人のコメントやタイトルにやわらかく反映してください。
-- スコアは画像自体の印象を基本とし、投稿者コメントに過剰に引っ張られないようにしてください。
+- 投稿者から「ココ見てほしい」が指定されている場合は、その内容を補助情報として軽く参考にしてください。
+- ただし、コメントの主題にしすぎないでください。
+- 画像そのものから読み取れる印象を最優先してください。
+- 投稿者の意図をそのままなぞるのではなく、画像から自然に確認できる範囲で少しだけ反映してください。
+- 3人のコメントすべてに「ココ見てほしい」の内容を入れる必要はありません。
+- タイトル生成では、投稿者コメントよりも画像全体の印象を優先してください。
+- スコアは画像自体の印象を基本とし、投稿者コメントに引っ張られすぎないようにしてください。
 
 【8つの評価軸】
 各軸を -5 〜 +5 の整数で評価してください。
@@ -171,9 +174,13 @@ SECOND_PROJECT_PROMPT = """
 - 今の画像の良さを壊さない提案にしてください。
 
 【シェアしたくなるタイトル】
-- 画像を見て、少し斜めで印象に残る一言タイトルをつけてください
-- 大げさすぎず、でも少しだけ人に見せたくなる感じにしてください
-- タイトルは短めにしてください
+- 3人のキャラクターそれぞれの視点で、短い一言タイトルをつけてください
+- おじさん：余韻、情緒、空気感を拾った落ち着いたタイトル
+- ギャル：映え、エモさ、第一印象を拾った明るいタイトル
+- モデラー：構図、質感、作り込みを拾った観察者らしいタイトル
+- ただし全体として、今の表紙の世界観に合わせて、遊びすぎない大人向けのタイトルにしてください
+- 大げさすぎるタイトル、ネットミームっぽいタイトル、ふざけすぎたタイトルは避けてください
+- 短めで、人に見せたくなる一言にしてください
 - タイトルは画像全体の印象を踏まえてください
 
 【どの層にウケそうか】
@@ -186,7 +193,8 @@ SECOND_PROJECT_PROMPT = """
 - JSON以外の文章は一切出力しないでください
 - 数値は整数で返してください
 - character_comments は各キャラ 2〜3文で返してください
-- share_title は短めにしてください
+- character_titles は各キャラごとに短めのタイトルを返してください
+- share_title は互換性のために短めのタイトルを1つ返してもよいですが、最終表示では character_titles から選びます
 - appeal_targets は2〜4個の短い語句で返してください
 - キー名は以下と完全一致させてください
 
@@ -208,6 +216,11 @@ SECOND_PROJECT_PROMPT = """
     "モデラー": ""
   },
   "character_advice": {
+    "おじさん": "",
+    "ギャル": "",
+    "モデラー": ""
+  },
+  "character_titles": {
     "おじさん": "",
     "ギャル": "",
     "モデラー": ""
@@ -372,9 +385,20 @@ def calculate_character_scores(axis_scores: dict) -> tuple[dict, int, int]:
 
     return character_scores, true_score, three_vis
 
+def get_top_character_key(character_scores: dict) -> str:
+    return max(character_scores, key=character_scores.get)
+
 def get_top_character_name(character_scores: dict) -> str:
-    top_key = max(character_scores, key=character_scores.get)
+    top_key = get_top_character_key(character_scores)
     return CHARACTER_DISPLAY_NAMES.get(top_key, top_key)
+
+def choose_share_title(character_titles: dict, character_scores: dict, fallback_title: str = "") -> str:
+    if not isinstance(character_titles, dict):
+        character_titles = {}
+
+    top_character_key = get_top_character_key(character_scores)
+    selected_title = character_titles.get(top_character_key, "")
+    return selected_title or fallback_title or "無題の一枚"
 
 def plot_8axis_radar(axis_scores: dict):
     labels = list(axis_scores.keys())
@@ -453,10 +477,13 @@ def analyze_image_with_ai(image_bytes, focus_point=""):
     axis_scores = data["axis_scores"]
     character_comments = data["character_comments"]
     character_advice = data["character_advice"]
-    share_title = data["share_title"]
+    character_titles = data.get("character_titles", {})
+    if not isinstance(character_titles, dict):
+        character_titles = {}
+    share_title = data.get("share_title", "")
     appeal_targets = data["appeal_targets"]
 
-    return axis_scores, character_comments, character_advice, share_title, appeal_targets
+    return axis_scores, character_comments, character_advice, character_titles, share_title, appeal_targets
 
 def plot_16axis_radar_from_8axis(axis_scores: dict):
     # 8軸ペア
@@ -743,10 +770,15 @@ def get_mock_analysis_data():
         "モデラー": "少しプロっぽく見せるなら、湯気やカトラリーの置き方を少しだけ見せると、食卓の物語がふっと立ち上がります。今の素直なおいしさはそのままに、ひと呼吸ある雰囲気に寄せるとまた良いですな。",
     }
 
+    character_titles = {
+        "おじさん": "食卓に残る焼き色",
+        "ギャル": "この焼き目、見せたい",
+        "モデラー": "断面で魅せる主役感",
+    }
     share_title = "肉、正面から来た"
     appeal_targets = ["肉好き", "飯テロ好き", "映え好き", "こってり派"]
 
-    return axis_scores, character_comments, character_advice, share_title, appeal_targets
+    return axis_scores, character_comments, character_advice, character_titles, share_title, appeal_targets
 
 def prepare_image_for_app(uploaded_file, max_size_kb=500, max_width=1280, max_height=1280, quality=85):
     """
@@ -822,8 +854,9 @@ if uploaded_file is not None:
 
     if st.button("AIで評価する"):
         try:
-            axis_scores, character_comments, character_advice, share_title, appeal_targets = analyze_image_with_ai(prepared_image_bytes, focus_point)
+            axis_scores, character_comments, character_advice, character_titles, fallback_share_title, appeal_targets = analyze_image_with_ai(prepared_image_bytes, focus_point)
             character_scores, true_score, three_vis = calculate_character_scores(axis_scores)
+            share_title = choose_share_title(character_titles, character_scores, fallback_share_title)
 
             st.success("AI評価を実行しました。")
 
@@ -894,7 +927,7 @@ if uploaded_file is not None:
         line-height: 1.5;
         font-weight: 600;
     ">
-        この画像に3人のAIキャラが勝手につけた印象値
+        この画像に3人のAIキャラがつけた印象値
     </div>
 
     <div style="
