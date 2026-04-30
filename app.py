@@ -313,9 +313,9 @@ CHARACTER_EMOJIS = {
 }
 
 CHARACTER_ICON_PATHS = {
-    "おじさん": "assets/icon_jin.png",
-    "ギャル": "assets/icon_reina.png",
-    "モデラー": "assets/icon_takumi.png",
+    "おじさん": "assets/icon_jin.jpg",
+    "ギャル": "assets/icon_reina.jpg",
+    "モデラー": "assets/icon_takumi.jpg",
 }
 
 CHARACTER_COMMENT_NAMES = {
@@ -852,9 +852,13 @@ def prepare_image_for_app(uploaded_file, max_size_kb=500, max_width=1280, max_he
 def image_file_to_data_uri(path: str) -> str:
     with open(path, "rb") as f:
         encoded = base64.b64encode(f.read()).decode("utf-8")
-    return f"data:image/png;base64,{encoded}"
 
-st.image("assets/hero_impression_ja_mobile.png", use_container_width=True)
+    ext = os.path.splitext(path)[1].lower()
+    mime = "image/jpeg" if ext in [".jpg", ".jpeg"] else "image/png"
+
+    return f"data:{mime};base64,{encoded}"
+
+st.image("assets/hero_impression_ja_mobile.jpg", use_container_width=True)
 
 
 st.markdown("""
