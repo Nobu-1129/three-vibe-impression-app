@@ -1171,9 +1171,9 @@ if uploaded_file is not None:
         full_comment_html = "".join(comment_html_parts)
 
         comment_text_total = (
-            len(str(result["character_comments"].get("ジンさん", "")))
-            + len(str(result["character_comments"].get("レイナ", "")))
-            + len(str(result["character_comments"].get("タクミ", "")))
+            len(str(result["character comments"].get("おじさん", "")))
+            + len(str(result["character comments"].get("ギャル", "")))
+            + len(str(result["character comments"].get("モデラー", "")))
         )
 
         comment_area_height = max(900, min(1500, 620 + (comment_text_total // 10) * 22))
