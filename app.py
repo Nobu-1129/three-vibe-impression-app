@@ -953,7 +953,7 @@ if uploaded_file is not None:
     </div>
 </div>
 """
-        components.html(score_card_html, height=160, scrolling=False)
+        components.html(score_card_html, height=230, scrolling=False)
         # 好きそうな人たち
         tags_html = "".join([
             f'<span style="display:inline-block; background:#f2f4f7; border-radius:14px; padding:6px 10px; margin:4px 6px 4px 0; font-size:16px;">{t}</span>'
@@ -1169,7 +1169,15 @@ if uploaded_file is not None:
 """)
 
         full_comment_html = "".join(comment_html_parts)
-        components.html(full_comment_html, height=600, scrolling=False)
+
+        comment_text_total = (
+            len(str(result["character_comments"].get("おじさん", "")))
+            + len(str(result["character_comments"].get("ギャル", "")))
+            + len(str(result["character_comments"].get("モデラー", "")))
+        )
+
+        comment_area_height = max(900, min(1500, 620 + (comment_text_total // 10) * 22))
+        components.html(full_comment_html, height=comment_area_height, scrolling=False)
 
         show_advice = st.checkbox("アドバイスも見る")
 
