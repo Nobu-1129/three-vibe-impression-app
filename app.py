@@ -854,7 +854,7 @@ def image_file_to_data_uri(path: str) -> str:
         encoded = base64.b64encode(f.read()).decode("utf-8")
     return f"data:image/png;base64,{encoded}"
 
-st.image("assets/hero_impression_ja.png", use_container_width=True)
+st.image("assets/hero_impression_ja_mobile.png", use_container_width=True)
 
 
 st.markdown("""
