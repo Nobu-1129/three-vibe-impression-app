@@ -87,6 +87,21 @@ SECOND_PROJECT_PROMPT = """
 - 派手な画像を「良い」と短絡しないでください。
 - 8軸のスコアは、見た目の勢いだけでなく、構図・色・質感・文脈から総合的に判断してください。
 
+【3VISスコアの考え方】
+- 3VISは単なる画像の整い方や情報量ではなく、「人に見せたときにどれだけ印象に残るか」「ギャラリーに並べたときに見てもらいたくなるか」「投稿者がその一枚を見せたいと思った理由が伝わるか」を重視してください。
+- 3人それぞれの character_scores は 0〜100 点の整数で返してください。
+- 10点刻み、25点刻み、50点刻みのような丸い点数に寄せないでください。
+- 画像ごとの微妙な差を反映し、1点単位で自然にばらつく点数にしてください。
+- ただし、わざと不自然な端数にするのではなく、観察した印象の差から自然に決めてください。
+- 地図、メニュー表、案内図、フロアマップ、説明資料のような情報画像は、情報が整理されていても、それだけで高得点にしないでください。
+- 情報画像で鑑賞性、感情反応、驚き、面白さ、見せたくなる力が弱い場合はスコアを抑えてください。
+- 料理写真、手作り料理、記録写真、日常の一枚は、プロの写真のように整っていなくても、食欲、驚き、温かみ、投稿者らしさ、見せたい意図が伝わる場合はきちんと評価してください。
+- 「写真として綺麗か」だけでなく、「人に見せたときに反応が返ってきそうか」「コメントしたくなる要素があるか」「記憶に残る主題があるか」を重視してください。
+- おじさんは、情緒、空気感、記憶に残る感じを重視して採点してください。
+- ギャルは、映え、第一印象、誰かに見せたくなる感じを重視して採点してください。
+- モデラーは、構図、質感、主題の見え方を重視して採点してください。
+- 全体としては、ギャラリーに並べたときの鑑賞性と見せたくなる力を重視してください。
+
 【投稿者が見てほしいポイントについて】
 - 投稿者から「ココ見てほしい」が指定されている場合は、その内容を補助情報として軽く参考にしてください。
 - ただし、コメントの主題にしすぎないでください。
@@ -194,6 +209,8 @@ SECOND_PROJECT_PROMPT = """
 - 必ずJSONのみを返してください
 - JSON以外の文章は一切出力しないでください
 - 数値は整数で返してください
+- character_scores は各キャラ 0〜100 の整数で返してください
+- character_scores は丸い点数に寄せず、1点単位の自然な差を反映してください
 - character_comments は各キャラ 2〜3文で返してください
 - character_titles は各キャラごとに短めのタイトルを返してください
 - share_title は互換性のために短めのタイトルを1つ返してもよいですが、最終表示では character_titles から選びます
@@ -211,6 +228,11 @@ SECOND_PROJECT_PROMPT = """
     "親しみやすい ↔ 近寄りがたい": 0,
     "王道 ↔ 尖ってる": 0,
     "インパクト派 ↔ ディテール派": 0
+  },
+  "character_scores": {
+    "おじさん": 0,
+    "ギャル": 0,
+    "モデラー": 0
   },
   "character_comments": {
     "おじさん": "",
@@ -329,61 +351,61 @@ def compress_image_for_ai(uploaded_file, max_size_kb=500, max_width=1280, max_he
 
     return output
 
-def calculate_character_scores(axis_scores: dict) -> tuple[dict, int, int]:
-    """
-    axis_scores: AIが返した8軸スコア（-5～+5）
-    return:
-        character_scores: 各キャラの表示用スコア（合計が three_vis になる）
-        true_score: 内部用 0～360点
-        three_vis: 0～1000
-    """
-    raw_character_scores = {}
+def normalize_character_scores(character_scores: dict) -> dict:
+    normalized_scores = {}
+
+    for character in CHARACTER_WEIGHTS.keys():
+        raw_score = character_scores.get(character, 0) if isinstance(character_scores, dict) else 0
+
+        try:
+            score = int(round(float(raw_score)))
+        except (TypeError, ValueError):
+            score = 0
+
+        normalized_scores[character] = max(0, min(100, score))
+
+    return normalized_scores
+
+def calculate_fallback_character_scores(axis_scores: dict) -> dict:
+    character_scores = {}
 
     for character, weights in CHARACTER_WEIGHTS.items():
-        total = 0.0
+        weighted_total = 0.0
+        max_total = sum(weights.values())
+        signed_nuance = 0.0
 
-        for axis_name, weight in weights.items():
+        for index, (axis_name, weight) in enumerate(weights.items(), start=1):
             raw_score = axis_scores.get(axis_name, 0)
+            strength = abs(raw_score) / 5.0
+            weighted_total += weight * strength
+            signed_nuance += raw_score * index
 
-            # 印象の強さだけを見る
-            strength = abs(raw_score) / 5.0   # 0.0～1.0
-            axis_point = weight * strength
-            total += axis_point
+        if max_total == 0:
+            character_scores[character] = 0
+            continue
 
-        raw_character_scores[character] = total
+        base_score = (weighted_total / max_total) * 100
+        nuance_adjustment = signed_nuance * 0.13
+        character_scores[character] = round(base_score + nuance_adjustment)
 
-    raw_total = sum(raw_character_scores.values())
-    true_score = round(raw_total)
-    three_vis = round((raw_total / 360) * 1000)
+    return normalize_character_scores(character_scores)
 
-    # 表示用キャラスコアは、合計が three_vis になるように再配分
-    if raw_total == 0 or three_vis == 0:
-        character_scores = {character: 0 for character in raw_character_scores}
-        return character_scores, true_score, three_vis
+def calculate_character_scores(axis_scores: dict, ai_character_scores: dict = None) -> tuple[dict, int, int]:
+    """
+    axis_scores: AIが返した8軸スコア（-5～+5）
+    ai_character_scores: AIが返した3キャラ別スコア（0～100）
+    return:
+        character_scores: 各キャラの表示用スコア（0～100）
+        true_score: 内部用 0～300点
+        three_vis: 表示・保存用 0～300
+    """
+    if isinstance(ai_character_scores, dict) and ai_character_scores:
+        character_scores = normalize_character_scores(ai_character_scores)
+    else:
+        character_scores = calculate_fallback_character_scores(axis_scores)
 
-    scaled_scores_float = {
-        character: (score / raw_total) * three_vis
-        for character, score in raw_character_scores.items()
-    }
-
-    # まず整数部分を入れる
-    character_scores = {
-        character: int(score)
-        for character, score in scaled_scores_float.items()
-    }
-
-    # 端数の大きい順に残りを配る
-    allocated = sum(character_scores.values())
-    remainder = three_vis - allocated
-
-    if remainder > 0:
-        fractions = sorted(
-            scaled_scores_float.items(),
-            key=lambda x: x[1] - int(x[1]),
-            reverse=True
-        )
-        for i in range(remainder):
-            character_scores[fractions[i][0]] += 1
+    true_score = sum(character_scores.values())
+    three_vis = true_score
 
     return character_scores, true_score, three_vis
 
@@ -477,6 +499,7 @@ def analyze_image_with_ai(image_bytes, focus_point=""):
     data = json.loads(response_text)
 
     axis_scores = data["axis_scores"]
+    ai_character_scores = data.get("character_scores", {})
     character_comments = data["character_comments"]
     character_advice = data["character_advice"]
     character_titles = data.get("character_titles", {})
@@ -485,7 +508,7 @@ def analyze_image_with_ai(image_bytes, focus_point=""):
     share_title = data.get("share_title", "")
     appeal_targets = data["appeal_targets"]
 
-    return axis_scores, character_comments, character_advice, character_titles, share_title, appeal_targets
+    return axis_scores, ai_character_scores, character_comments, character_advice, character_titles, share_title, appeal_targets
 
 def plot_16axis_radar_from_8axis(axis_scores: dict):
     # 8軸ペア
@@ -760,6 +783,12 @@ def get_mock_analysis_data():
         "インパクト派 ↔ ディテール派": 2,
     }
 
+    character_scores = {
+        "おじさん": 72,
+        "ギャル": 84,
+        "モデラー": 79,
+    }
+
     character_comments = {
         "おじさん": "いやあ、これは実にいい焼き色ですな。切り口のピンクの残り方もきれいで、見ているだけで「うむ、今日は当たりだな」と思わせる余韻があります。食卓のあたたかい気配まで伝わってきますね。",
         "ギャル": "うわ、これは普通に見せたくなるやつ！ 表面のこんがり感と中のレア感のコントラストがめっちゃ映えてて、肉の説得力が強い〜。お皿の上でちゃんと主役してるのが最高。",
@@ -780,7 +809,7 @@ def get_mock_analysis_data():
     share_title = "肉、正面から来た"
     appeal_targets = ["肉好き", "飯テロ好き", "映え好き", "こってり派"]
 
-    return axis_scores, character_comments, character_advice, character_titles, share_title, appeal_targets
+    return axis_scores, character_scores, character_comments, character_advice, character_titles, share_title, appeal_targets
 
 def prepare_image_for_app(uploaded_file, max_size_kb=500, max_width=1280, max_height=1280, quality=85):
     """
@@ -857,8 +886,8 @@ if uploaded_file is not None:
 
     if st.button("AIで評価する"):
         try:
-            axis_scores, character_comments, character_advice, character_titles, fallback_share_title, appeal_targets = analyze_image_with_ai(prepared_image_bytes, focus_point)
-            character_scores, true_score, three_vis = calculate_character_scores(axis_scores)
+            axis_scores, ai_character_scores, character_comments, character_advice, character_titles, fallback_share_title, appeal_targets = analyze_image_with_ai(prepared_image_bytes, focus_point)
+            character_scores, true_score, three_vis = calculate_character_scores(axis_scores, ai_character_scores)
             share_title = choose_share_title(character_titles, character_scores, fallback_share_title)
 
             st.success("AI評価を実行しました。")
