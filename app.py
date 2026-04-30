@@ -1,5 +1,5 @@
 import streamlit as st
-from PIL import Image
+from PIL import Image, ImageOps
 import matplotlib.pyplot as plt
 import japanize_matplotlib
 import numpy as np
@@ -14,6 +14,7 @@ import os
 from openai import OpenAI
 from supabase import create_client, Client
 from uuid import uuid4
+
 
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 supabase: Client = create_client(
@@ -787,6 +788,7 @@ def prepare_image_for_app(uploaded_file, max_size_kb=500, max_width=1280, max_he
     画面表示・API送信・保存に使えるJPEG bytesを返す
     """
     image = Image.open(uploaded_file)
+    image = ImageOps.exif_transpose(image)
 
     if image.mode in ("RGBA", "P"):
         image = image.convert("RGB")
