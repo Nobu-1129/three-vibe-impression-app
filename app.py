@@ -1014,6 +1014,10 @@ if uploaded_file is not None:
         disabled=already_evaluated,
         use_container_width=True,
     ):
+        if st.session_state.get("has_evaluated_current_image", False):
+            st.warning("この画像はすでに評価済みです。もう一度評価したい場合は、別の画像を読み込んでください。")
+            st.stop()
+
         try:
             axis_scores, ai_character_scores, character_comments, character_advice, character_titles, fallback_share_title, appeal_targets = analyze_image_with_ai(prepared_image_bytes, focus_point)
             character_scores, true_score, three_vis = calculate_character_scores(axis_scores, ai_character_scores)
@@ -1042,6 +1046,8 @@ if uploaded_file is not None:
         st.session_state["prepared_image_bytes"] = prepared_image_bytes
         st.session_state["poster_name"] = poster_name
         st.session_state["has_evaluated_current_image"] = True
+
+        st.rerun()
 
     if already_evaluated:
         st.info("この画像はすでに評価済みです。もう一度評価したい場合は、別の画像を読み込んでください。")
@@ -1419,7 +1425,10 @@ if uploaded_file is not None:
             "ギャラリーにエントリーする",
             disabled=already_entered,
             use_container_width=True,
-        ):
+         ):
+            if st.session_state.get("has_entered_current_image", False):
+                 st.warning("この画像はすでにギャラリー候補にエントリー済みです。")
+                st.stop()
 
             try:
                 save_result_to_supabase(
@@ -1441,6 +1450,8 @@ if uploaded_file is not None:
 
                 st.success("ギャラリー候補にエントリーしました。管理人の確認後に公開されます。")
                 st.info("画像と評価結果を保存しました。")
+
+                st.rerun()
 
             except Exception as e:
                 st.error(f"保存中にエラーが発生しました: {e}")
