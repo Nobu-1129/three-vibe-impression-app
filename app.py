@@ -889,7 +889,7 @@ st.image("assets/hero_impression_ja_mobile.jpg", use_container_width=True)
 st.markdown("""
 <style>
 div[data-testid="stFileUploader"] {
-    margin-top: -10px;
+    margin-top: -15px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -918,14 +918,14 @@ st.markdown("""
 
 st.markdown("""
 <div style="
-    margin-top: 18px;
+    margin-top: 16px;
     margin-bottom: 2px;
     font-size: 16px;
     font-weight: 700;
     color: #333;
-    line-height: 1.5;
+    line-height: 1.4;
 ">
-    AIキャラに見せる画像を読み込んでください
+    3人に見てもらいたい画像を読み込んでください
 </div>
 """, unsafe_allow_html=True)
 
