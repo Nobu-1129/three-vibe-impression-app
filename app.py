@@ -1428,7 +1428,7 @@ if uploaded_file is not None:
          ):
             if st.session_state.get("has_entered_current_image", False):
                  st.warning("この画像はすでにギャラリー候補にエントリー済みです。")
-                st.stop()
+                 st.stop()
 
             try:
                 save_result_to_supabase(
