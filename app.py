@@ -889,7 +889,7 @@ st.image("assets/hero_impression_ja_mobile.jpg", use_container_width=True)
 st.markdown("""
 <style>
 div[data-testid="stFileUploader"] {
-    margin-top: -15px;
+    margin-top: -20px;
 }
 </style>
 """, unsafe_allow_html=True)
