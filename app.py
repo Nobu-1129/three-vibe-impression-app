@@ -919,7 +919,7 @@ st.markdown("""
 st.markdown("""
 <div style="
     margin-top: 18px;
-    margin-bottom: 8px;
+    margin-bottom: 2px;
     font-size: 16px;
     font-weight: 700;
     color: #333;
