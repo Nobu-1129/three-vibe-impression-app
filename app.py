@@ -885,34 +885,9 @@ def image_file_to_data_uri(path: str) -> str:
     return f"data:{mime};base64,{encoded}"
 
 st.image("assets/hero_impression_ja_mobile.jpg", use_container_width=True)
-GALLERY_URL = "https://three-vibe-gallery-ydrzzjnrcfd989aciulbxh.streamlit.app"
-
-st.markdown(
-    f"""
-    <div style="margin: 12px 0 22px; text-align: center;">
-      <a href="{GALLERY_URL}" target="_blank" style="
-          display: inline-block;
-          width: 100%;
-          box-sizing: border-box;
-          padding: 13px 16px;
-          border-radius: 999px;
-          background: #ffffff;
-          border: 1px solid #d0d5dd;
-          color: #1f2937;
-          font-size: 16px;
-          font-weight: 700;
-          text-decoration: none;
-          box-shadow: 0 4px 14px rgba(31, 41, 55, 0.08);
-      ">
-        公開作品ギャラリーを見る
-      </a>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
 
 st.markdown("""
-<div style="margin-top: 10px; margin-bottom: 0px; font-size: 18px; color: #333;">
+<div style="margin-top: 10px; margin-bottom: 0px; font-size: 14px; color: #333;">
     AIキャラに見せる画像を読み込んでください
 </div>
 """, unsafe_allow_html=True)
@@ -1468,6 +1443,30 @@ if uploaded_file is not None:
 
         st.divider()
 
+def render_gallery_text_link():
+    GALLERY_URL = "https://three-vibe-gallery-ydrzzjnrcfd989aciulbxh.streamlit.app"
+
+    st.markdown(
+        f"""
+<div style="
+    margin-top: 28px;
+    margin-bottom: 10px;
+    text-align: center;
+    font-size: 14px;
+    line-height: 1.6;
+">
+  <a href="{GALLERY_URL}" target="_blank" style="
+      color: #4b5563;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+  ">
+    公開作品ギャラリーを見る
+  </a>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
 def render_contact_footer():
     st.markdown("""
 <div style="
@@ -1485,4 +1484,5 @@ def render_contact_footer():
 """, unsafe_allow_html=True)
 
 
+render_gallery_text_link()
 render_contact_footer()
