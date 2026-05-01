@@ -920,7 +920,7 @@ st.markdown("""
 <div style="
     margin-top: 16px;
     margin-bottom: 2px;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 700;
     color: #333;
     line-height: 1.4;
@@ -1467,7 +1467,7 @@ def render_gallery_text_link():
       text-decoration: underline;
       text-underline-offset: 3px;
   ">
-    公開作品ギャラリーを見る
+    リンク：公開作品ギャラリー
   </a>
 </div>
 """,
