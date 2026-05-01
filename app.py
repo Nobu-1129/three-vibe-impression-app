@@ -1015,7 +1015,7 @@ if uploaded_file is not None:
         use_container_width=True,
     ):
         if st.session_state.get("has_evaluated_current_image", False):
-            st.warning("この画像はすでに評価済みです。もう一度評価したい場合は、別の画像を読み込んでください。")
+            st.warning("この画像を見せてもらいました。３人がつけたスコアや感想は下に記載しました。")
             st.stop()
 
         try:
@@ -1427,7 +1427,7 @@ if uploaded_file is not None:
             use_container_width=True,
          ):
             if st.session_state.get("has_entered_current_image", False):
-                 st.warning("この画像はすでにギャラリー候補にエントリー済みです。")
+                 st.warning("この画像をギャラリー候補にエントリーしました。")
                  st.stop()
 
             try:
