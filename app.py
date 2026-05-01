@@ -1015,7 +1015,7 @@ if uploaded_file is not None:
         use_container_width=True,
     ):
         if st.session_state.get("has_evaluated_current_image", False):
-            st.warning("この画像を見せてもらいました。我々がつけたスコアや感想は下に記載しました。")
+            st.warning("この画像を見せてもらいました。我々がつけた印象値や感想は下に記載しました。")
             st.stop()
 
         try:
@@ -1050,7 +1050,7 @@ if uploaded_file is not None:
         st.rerun()
 
     if already_evaluated:
-        st.info("この画像を見せてもらいました。我々がつけたスコアや感想は下に記載しました。")
+        st.info("この画像を見せてもらいました。我々がつけた印象値や感想は下に記載しました。")
 
     if "axis_scores" in st.session_state:
         axis_scores = st.session_state["axis_scores"]
