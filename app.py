@@ -974,6 +974,31 @@ focus_point = st.text_area(
 )
 
 if uploaded_file is not None:
+    current_upload_key = f"{uploaded_file.name}_{uploaded_file.size}"
+
+    if st.session_state.get("current_upload_key") != current_upload_key:
+        st.session_state["current_upload_key"] = current_upload_key
+        st.session_state["has_evaluated_current_image"] = False
+        st.session_state["has_entered_current_image"] = False
+
+        # 前の画像の評価結果を消す
+        for key in [
+            "axis_scores",
+            "character_comments",
+            "character_advice",
+            "share_title",
+            "appeal_targets",
+            "character_scores",
+            "true_score",
+            "three_vis",
+            "uploaded_file_name",
+            "focus_point",
+            "poster_name",
+            "poster_profile",
+            "prepared_image_bytes",
+        ]:
+            st.session_state.pop(key, None)
+
     rotation_label = st.radio(
         "画像の向き",
         ["そのまま", "右に90度", "180度", "左に90度"],
@@ -1000,7 +1025,13 @@ if uploaded_file is not None:
 
     st.image(display_image, caption="読み込んだ画像", use_container_width=True)
 
-    if st.button("AIで評価する"):
+    already_evaluated = st.session_state.get("has_evaluated_current_image", False)
+
+    if st.button(
+        "3人に見てもらう",
+        disabled=already_evaluated,
+        use_container_width=True,
+    ):
         try:
             axis_scores, ai_character_scores, character_comments, character_advice, character_titles, fallback_share_title, appeal_targets = analyze_image_with_ai(prepared_image_bytes, focus_point)
             character_scores, true_score, three_vis = calculate_character_scores(axis_scores, ai_character_scores)
@@ -1028,6 +1059,10 @@ if uploaded_file is not None:
         st.session_state["poster_profile"] = poster_profile
         st.session_state["prepared_image_bytes"] = prepared_image_bytes
         st.session_state["poster_name"] = poster_name
+        st.session_state["has_evaluated_current_image"] = True
+
+    if already_evaluated:
+        st.info("この画像はすでに評価済みです。もう一度評価したい場合は、別の画像を読み込んでください。")
 
     if "axis_scores" in st.session_state:
         axis_scores = st.session_state["axis_scores"]
@@ -1396,7 +1431,14 @@ if uploaded_file is not None:
 
         st.info("この評価結果をギャラリー候補に登録するには、下の「ギャラリーにエントリーする」を押してください。公開は管理人の確認後に行われます。")
 
-        if st.button("ギャラリーにエントリーする"):
+        already_entered = st.session_state.get("has_entered_current_image", False)
+
+        if st.button(
+            "ギャラリーにエントリーする",
+            disabled=already_entered,
+            use_container_width=True,
+        ):
+
             try:
                 save_result_to_supabase(
                     image_bytes=st.session_state["prepared_image_bytes"],
@@ -1413,11 +1455,17 @@ if uploaded_file is not None:
                     focus_point=st.session_state.get("focus_point", ""),
                 )
 
+                st.session_state["has_entered_current_image"] = True
+
                 st.success("ギャラリー候補にエントリーしました。管理人の確認後に公開されます。")
                 st.info("画像と評価結果を保存しました。")
 
             except Exception as e:
                 st.error(f"保存中にエラーが発生しました: {e}")
+
+        if already_entered:
+            st.info("この画像はすでにギャラリー候補にエントリー済みです。")
+
         st.divider()
 
 def render_contact_footer():
