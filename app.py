@@ -207,10 +207,43 @@ SECOND_PROJECT_PROMPT = """
 - タイトルは画像全体の印象を踏まえてください
 - タイトルは分析メモや資料名のようにしすぎず、画廊に並べても自然な一言にしてください。
 
-【どの層にウケそうか】
-- どんな人に刺さりそうかを、2〜4個の短い語句で返してください
-- 例：『映え好き』『クセ強好き』『しっとり派』『動物好き』など
-- 悪意のある表現は使わないでください
+【この画像が好きそうな人たち】
+- appeal_targets は、必ず下の候補タグ一覧から3〜4個だけ選んでください。
+- 候補タグ一覧にない語句は使わないでください。
+- 表記ゆれを避けるため、文字は候補タグと完全一致させてください。
+- 画像の種類ではなく、「見たい人が探しやすい分類」として選んでください。
+- 迷った場合は、より広く探されやすいタグを優先してください。
+
+候補タグ一覧：
+- 写真好き
+- イラスト好き
+- 料理好き
+- 肉好き
+- 風景好き
+- 動物好き
+- 乗り物好き
+- ガンプラ好き
+- キャラ好き
+- かわいい好き
+- かっこいい好き
+- きれい好き
+- 映え好き
+- エモい好き
+- しっとり派
+- にぎやか派
+- クセ強好き
+- 王道好き
+- 尖り好き
+- ディテール好き
+- 手作り好き
+- 日常好き
+- 作品づくり好き
+- ネタ好き
+- ファンタジー好き
+- 魔法世界好き
+- 冒険好き
+- 幻想的好き
+- 世界観好き
 
 【出力ルール】
 - 必ずJSONのみを返してください
@@ -221,7 +254,8 @@ SECOND_PROJECT_PROMPT = """
 - character_comments は各キャラ 2〜3文で返してください
 - character_titles は各キャラごとに短めのタイトルを返してください
 - share_title は互換性のために短めのタイトルを1つ返してもよいですが、最終表示では character_titles から選びます
-- appeal_targets は2〜4個の短い語句で返してください
+- appeal_targets は候補タグ一覧から3〜4個だけ選び、候補タグと完全一致する文字列で返してください
+- 候補タグ一覧にない語句は絶対に返さないでください
 - キー名は以下と完全一致させてください
 
 【出力フォーマット】
@@ -462,15 +496,6 @@ def plot_8axis_radar(axis_scores: dict):
     ax.set_title("8軸レーダーチャート", fontsize=16, pad=20)
 
     return fig
-
-def load_history_from_supabase():
-    result = (
-        supabase.table("image_evaluations")
-        .select("*")
-        .order("created_at", desc=True)
-        .execute()
-    )
-    return pd.DataFrame(result.data)
 
 def analyze_image_with_ai(image_bytes, focus_point=""):
     if USE_MOCK_DATA:
@@ -721,19 +746,6 @@ def render_8axis_bar_chart(axis_scores: dict):
     full_html = "".join(html_parts)
     components.html(full_html, height=700, scrolling=False)
 
-def is_admin_mode() -> bool:
-    st.markdown("### 管理者メニュー")
-
-    entered_password = st.text_input(
-        "管理者パスワード",
-        type="password",
-        key="admin_password_input"
-    )
-
-    if not entered_password:
-        return False
-
-    return entered_password == st.secrets.get("ADMIN_PASSWORD", "")
 
 def save_result_to_supabase(
     image_bytes: bytes,
@@ -816,17 +828,29 @@ def get_mock_analysis_data():
         "モデラー": "断面で魅せる主役感",
     }
     share_title = "肉、正面から来た"
-    appeal_targets = ["肉好き", "飯テロ好き", "映え好き", "こってり派"]
+    appeal_targets = ["料理好き", "肉好き", "映え好き", "手作り好き"]
 
     return axis_scores, character_scores, character_comments, character_advice, character_titles, share_title, appeal_targets
 
-def prepare_image_for_app(uploaded_file, max_size_kb=500, max_width=1280, max_height=1280, quality=85):
+def prepare_image_for_app(
+    uploaded_file,
+    rotation_angle=0,
+    max_size_kb=500,
+    max_width=1280,
+    max_height=1280,
+    quality=85
+):
     """
     uploaded_file を1回だけ圧縮して、
     画面表示・API送信・保存に使えるJPEG bytesを返す
+    rotation_angle: 0 / 90 / 180 / 270
     """
     image = Image.open(uploaded_file)
     image = ImageOps.exif_transpose(image)
+
+    if rotation_angle:
+        # PILのrotateは反時計回りなので、見た目として右回転にするためマイナス指定
+        image = image.rotate(-rotation_angle, expand=True)
 
     if image.mode in ("RGBA", "P"):
         image = image.convert("RGB")
@@ -950,7 +974,28 @@ focus_point = st.text_area(
 )
 
 if uploaded_file is not None:
-    prepared_image_bytes = prepare_image_for_app(uploaded_file, max_size_kb=500)
+    rotation_label = st.radio(
+        "画像の向き",
+        ["そのまま", "右に90度", "180度", "左に90度"],
+        horizontal=True,
+        help="スマホ写真が横向きに表示される場合は、ここで向きを調整してください。"
+    )
+
+    rotation_map = {
+        "そのまま": 0,
+        "右に90度": 90,
+        "180度": 180,
+        "左に90度": 270,
+    }
+
+    rotation_angle = rotation_map[rotation_label]
+
+    prepared_image_bytes = prepare_image_for_app(
+        uploaded_file,
+        rotation_angle=rotation_angle,
+        max_size_kb=500
+    )
+
     display_image = Image.open(io.BytesIO(prepared_image_bytes))
 
     st.image(display_image, caption="読み込んだ画像", use_container_width=True)
@@ -998,6 +1043,25 @@ if uploaded_file is not None:
         top_character_name = get_top_character_name(character_scores)
 
         st.divider()
+
+        st.markdown("""
+        <div style="
+            background:#fff7ed;
+            border:1px solid #fed7aa;
+            border-left:5px solid #f97316;
+            border-radius:12px;
+            padding:12px 14px;
+            margin:8px 0 18px;
+            color:#333;
+            font-size:15px;
+            line-height:1.7;
+        ">
+          <strong>保存について</strong><br>
+          評価結果の下に「ギャラリーにエントリーする」ボタンがあります。ボタンを押すと、この画像と評価結果がギャラリー候補に登録されます。<br>
+          登録後、管理人が画像を確認してからギャラリーに公開します。
+        </div>
+        """, unsafe_allow_html=True)
+
 
         # タイトル表示
         st.markdown(f"""
@@ -1328,9 +1392,11 @@ if uploaded_file is not None:
 
         st.divider()
 
-        st.subheader("保存")
+        st.subheader("ギャラリーへのエントリー")
 
-        if st.button("結果を保存"):
+        st.info("この評価結果をギャラリー候補に登録するには、下の「ギャラリーにエントリーする」を押してください。公開は管理人の確認後に行われます。")
+
+        if st.button("ギャラリーにエントリーする"):
             try:
                 save_result_to_supabase(
                     image_bytes=st.session_state["prepared_image_bytes"],
@@ -1347,21 +1413,28 @@ if uploaded_file is not None:
                     focus_point=st.session_state.get("focus_point", ""),
                 )
 
-                st.success("Supabase に保存しました。")
+                st.success("ギャラリー候補にエントリーしました。管理人の確認後に公開されます。")
                 st.info("画像と評価結果を保存しました。")
 
             except Exception as e:
                 st.error(f"保存中にエラーが発生しました: {e}")
         st.divider()
 
-        if is_admin_mode():
-            st.subheader("保存履歴")
+def render_contact_footer():
+    st.markdown("""
+<div style="
+    margin-top: 28px;
+    padding: 14px 12px;
+    border-top: 1px solid #e5e7eb;
+    color: #555;
+    font-size: 14px;
+    line-height: 1.7;
+">
+  <strong>お問い合わせ</strong><br>
+  公開画像の削除依頼、不適切な画像の報告、その他のお問い合わせは、管理人までご連絡ください。<br>
+  連絡先：threevibe.gallery@gmail.com
+</div>
+""", unsafe_allow_html=True)
 
-            history_df = load_history_from_supabase()
 
-            if not history_df.empty:
-                st.dataframe(history_df, use_container_width=True)
-            else:
-                st.info("まだ保存履歴はありません。")
-
-        st.divider()
+render_contact_footer()
