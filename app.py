@@ -887,12 +887,6 @@ def image_file_to_data_uri(path: str) -> str:
 st.image("assets/hero_impression_ja_mobile.jpg", use_container_width=True)
 
 st.markdown("""
-<div style="margin-top: 10px; margin-bottom: 0px; font-size: 14px; color: #333;">
-    AIキャラに見せる画像を読み込んでください
-</div>
-""", unsafe_allow_html=True)
-
-st.markdown("""
 <style>
 div[data-testid="stFileUploader"] {
     margin-top: -10px;
@@ -919,6 +913,19 @@ st.markdown("""
     他人の著作物を無断で使った画像、社会的に公開するのが不適切な画像は投稿しないでください。<br>
     ギャラリー公開前に内容を確認し、不適切と判断したものは非公開または削除する場合があります。
   </div>
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div style="
+    margin-top: 18px;
+    margin-bottom: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #333;
+    line-height: 1.5;
+">
+    AIキャラに見せる画像を読み込んでください
 </div>
 """, unsafe_allow_html=True)
 
