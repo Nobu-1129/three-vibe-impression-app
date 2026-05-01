@@ -746,6 +746,7 @@ def save_result_to_supabase(
     character_comments: dict,
     axis_scores: dict,
     poster_name: str,
+    poster_profile: str,
     focus_point: str,
 ):
     file_ext = uploaded_file_name.split(".")[-1].lower() if "." in uploaded_file_name else "jpg"
@@ -773,6 +774,7 @@ def save_result_to_supabase(
         "is_featured": False,
         "lang": "ja",
         "poster_name": poster_name,
+        "poster_profile": poster_profile,
         "focus_point": focus_point,
     }
 
@@ -859,7 +861,31 @@ def image_file_to_data_uri(path: str) -> str:
     return f"data:{mime};base64,{encoded}"
 
 st.image("assets/hero_impression_ja_mobile.jpg", use_container_width=True)
+GALLERY_URL = "https://three-vibe-gallery-ydrzzjnrcfd989aciulbxh.streamlit.app"
 
+st.markdown(
+    f"""
+    <div style="margin: 12px 0 22px; text-align: center;">
+      <a href="{GALLERY_URL}" target="_blank" style="
+          display: inline-block;
+          width: 100%;
+          box-sizing: border-box;
+          padding: 13px 16px;
+          border-radius: 999px;
+          background: #ffffff;
+          border: 1px solid #d0d5dd;
+          color: #1f2937;
+          font-size: 16px;
+          font-weight: 700;
+          text-decoration: none;
+          box-shadow: 0 4px 14px rgba(31, 41, 55, 0.08);
+      ">
+        公開作品ギャラリーを見る
+      </a>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 st.markdown("""
 <div style="margin-top: 10px; margin-bottom: 0px; font-size: 18px; color: #333;">
@@ -870,9 +896,31 @@ st.markdown("""
 st.markdown("""
 <style>
 div[data-testid="stFileUploader"] {
-    margin-top: -40px;
+    margin-top: -10px;
 }
 </style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div style="
+    background:#fff7ed;
+    border:1px solid #fed7aa;
+    border-left:5px solid #f97316;
+    border-radius:12px;
+    padding:12px 14px;
+    margin:10px 0 16px;
+    color:#333;
+    font-size:15px;
+    line-height:1.7;
+">
+  <div style="font-weight:800; margin-bottom:6px;">投稿前のお願い</div>
+  <div>
+    公開しても問題ない画像だけをアップロードしてください。<br>
+    他人の顔がはっきり写っている画像、住所・氏名・電話番号・車のナンバーなど個人情報が読める画像、
+    他人の著作物を無断で使った画像、社会的に公開するのが不適切な画像は投稿しないでください。<br>
+    ギャラリー公開前に内容を確認し、不適切と判断したものは非公開または削除する場合があります。
+  </div>
+</div>
 """, unsafe_allow_html=True)
 
 uploaded_file = st.file_uploader("", type=["png", "jpg", "jpeg"])
@@ -882,6 +930,18 @@ poster_name = st.text_input(
     placeholder="例：Taro、Jony、photo_life、illustration_mika など"
 )
 
+poster_profile = st.text_area(
+    "投稿者プロフィール（任意・公開されます）",
+    placeholder=(
+        "例：\n"
+        "X：@sample_creator\n"
+        "Instagram：@sample_gallery\n"
+        "note：https://note.com/sample\n"
+        "感想や制作相談はXのDMまでお願いします。\n\n"
+        "※電話番号・住所・本名・個人メールなど、公開したくない情報は入力しないでください。"
+    ),
+    height=150
+)
 
 focus_point = st.text_area(
     "この画像の「ココ見てほしい！」を入力してください\n※空欄でも印象値には影響しません",
@@ -920,6 +980,7 @@ if uploaded_file is not None:
         st.session_state["three_vis"] = three_vis
         st.session_state["uploaded_file_name"] = uploaded_file.name
         st.session_state["focus_point"] = focus_point
+        st.session_state["poster_profile"] = poster_profile
         st.session_state["prepared_image_bytes"] = prepared_image_bytes
         st.session_state["poster_name"] = poster_name
 
@@ -1282,6 +1343,7 @@ if uploaded_file is not None:
                     character_comments=character_comments,
                     axis_scores=axis_scores,
                     poster_name=st.session_state.get("poster_name", ""),
+                    poster_profile=st.session_state.get("poster_profile", ""),
                     focus_point=st.session_state.get("focus_point", ""),
                 )
 
