@@ -1015,7 +1015,7 @@ if uploaded_file is not None:
         use_container_width=True,
     ):
         if st.session_state.get("has_evaluated_current_image", False):
-            st.warning("この画像を見せてもらいました。３人がつけたスコアや感想は下に記載しました。")
+            st.warning("この画像を見せてもらいました。我々がつけたスコアや感想は下に記載しました。")
             st.stop()
 
         try:
@@ -1050,7 +1050,7 @@ if uploaded_file is not None:
         st.rerun()
 
     if already_evaluated:
-        st.info("この画像はすでに評価済みです。もう一度評価したい場合は、別の画像を読み込んでください。")
+        st.info("この画像を見せてもらいました。我々がつけたスコアや感想は下に記載しました。")
 
     if "axis_scores" in st.session_state:
         axis_scores = st.session_state["axis_scores"]
@@ -1457,7 +1457,7 @@ if uploaded_file is not None:
                 st.error(f"保存中にエラーが発生しました: {e}")
 
         if already_entered:
-            st.info("この画像はすでにギャラリー候補にエントリー済みです。")
+            st.info("この画像をギャラリー候補にエントリーしました。")
 
         st.divider()
 
