@@ -949,6 +949,20 @@ poster_profile = st.text_area(
     height=150
 )
 
+title_mode = st.radio(
+    "作品タイトル",
+    ["AIにタイトルをつけてもらう", "自分でタイトルをつける"],
+    horizontal=False,
+)
+
+custom_title = ""
+
+if title_mode == "自分でタイトルをつける":
+    custom_title = st.text_input(
+        "作品タイトル（公開されます）",
+        placeholder="例：春の食卓、古城の見える丘、はじめて焼いたローストビーフ など"
+    )
+
 focus_point = st.text_area(
     "この画像の「ココ見てほしい！」を入力してください\n※空欄でも印象値には影響しません",
     placeholder="例：アピールポイント、全体の配色、手作り感、高級感、かわいさ など",
@@ -1021,7 +1035,12 @@ if uploaded_file is not None:
         try:
             axis_scores, ai_character_scores, character_comments, character_advice, character_titles, fallback_share_title, appeal_targets = analyze_image_with_ai(prepared_image_bytes, focus_point)
             character_scores, true_score, three_vis = calculate_character_scores(axis_scores, ai_character_scores)
-            share_title = choose_share_title(character_titles, character_scores, fallback_share_title)
+            ai_share_title = choose_share_title(character_titles, character_scores, fallback_share_title)
+
+            if title_mode == "自分でタイトルをつける" and custom_title.strip():
+                share_title = custom_title.strip()
+            else:
+                share_title = ai_share_title
 
             st.success("AI評価を実行しました。")
 
@@ -1046,6 +1065,9 @@ if uploaded_file is not None:
         st.session_state["prepared_image_bytes"] = prepared_image_bytes
         st.session_state["poster_name"] = poster_name
         st.session_state["has_evaluated_current_image"] = True
+        st.session_state["title_mode"] = title_mode
+        st.session_state["custom_title"] = custom_title
+        st.session_state["ai_share_title"] = ai_share_title
 
         st.rerun()
 
@@ -1087,6 +1109,15 @@ if uploaded_file is not None:
 
 
         # タイトル表示
+        if st.session_state.get("title_mode") == "自分でタイトルをつける":
+            title_credit = ""
+        else:
+            title_credit_html = f"""
+            <div style="font-size: 16px; color: #555;">
+                名付け親：{top_character_name}
+            </div>
+            """
+
         st.markdown(f"""
         <div style="text-align:center; margin-top: 8px; margin-bottom: 22px;">
             <div style="font-size: 16px; color: #444; margin-bottom: 10px;">
@@ -1095,9 +1126,7 @@ if uploaded_file is not None:
             <div style="font-size: 34px; font-weight: 800; line-height: 1.4; margin-bottom: 10px;">
                 {share_title}
             </div>
-            <div style="font-size: 16px; color: #555;">
-                名付け親：{top_character_name}
-            </div>
+            {title_credit_html}
         </div>
         """, unsafe_allow_html=True)
 
