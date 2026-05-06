@@ -937,7 +937,7 @@ poster_name = st.text_input(
 )
 
 poster_profile = st.text_area(
-    "投稿者プロフィール・SNS案内（任意・公開されます）",
+    "投稿者プロフィール・SNS案内（任意／公開ページに表示）",
     placeholder=(
         "例：\n"
         "X：@sample_creator\n"
@@ -1110,13 +1110,13 @@ if uploaded_file is not None:
 
         # タイトル表示
         if st.session_state.get("title_mode") == "自分でタイトルをつける":
-            title_credit = ""
+            title_credit_html = ""
         else:
-            title_credit_html = f"""
-            <div style="font-size: 16px; color: #555;">
-                名付け親：{top_character_name}
-            </div>
-            """
+            title_credit_html = (
+                f'<div style="font-size:16px; color:#555; line-height:1.5;">'
+                f'名付け親：{top_character_name}'
+                f'</div>'
+            )
 
         st.markdown(f"""
         <div style="text-align:center; margin-top: 8px; margin-bottom: 22px;">
@@ -1444,7 +1444,18 @@ if uploaded_file is not None:
 
         st.divider()
 
-        st.subheader("ギャラリーへのエントリー")
+        st.markdown("""
+        <div style="
+            font-size:22px;
+            font-weight:800;
+            line-height:1.35;
+            margin-top:20px;
+            margin-bottom:14px;
+            color:#1f2937;
+        ">
+            ギャラリーへのエントリー
+        </div>
+        """, unsafe_allow_html=True)
 
         st.markdown("""
         <div style="
@@ -1463,7 +1474,7 @@ if uploaded_file is not None:
         <div>
             AIがつけたタイトル・印象値・3人のコメントをあとから見返せます。<br>
             公開OKになった作品だけがギャラリーに並びます。<br>
-            投稿者プロフィールに、XやInstagramなどの案内も任意で載せられます。
+            投稿者プロフィールには、XやInstagramなどの案内も任意で載せられます。
         </div>
         </div>
         """, unsafe_allow_html=True)
