@@ -680,7 +680,7 @@ def render_8axis_bar_chart(axis_scores: dict):
         2: "やや",
         3: "けっこう",
         4: "かなり",
-        5: "めっちゃ",
+        5: "超",
     }
 
     html_parts = []
