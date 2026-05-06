@@ -937,7 +937,7 @@ poster_name = st.text_input(
 )
 
 poster_profile = st.text_area(
-    "投稿者プロフィール（任意・公開されます）",
+    "投稿者プロフィール・SNS案内（任意・公開されます）",
     placeholder=(
         "例：\n"
         "X：@sample_creator\n"
@@ -1446,12 +1446,34 @@ if uploaded_file is not None:
 
         st.subheader("ギャラリーへのエントリー")
 
-        st.info("この評価結果をギャラリー候補に登録するには、下の「ギャラリーにエントリーする」を押してください。公開は管理人の確認後に行われます。")
+        st.markdown("""
+        <div style="
+            background:#f8fafc;
+            border:1px solid #e5e7eb;
+            border-radius:16px;
+            padding:14px 16px;
+            margin:12px 0 18px;
+            color:#333;
+            font-size:16px;
+            line-height:1.75;
+        ">
+        <div style="font-weight:800; margin-bottom:8px;">
+            ギャラリーに残すとできること
+        </div>
+        <div>
+            AIがつけたタイトル・印象値・3人のコメントをあとから見返せます。<br>
+            公開OKになった作品だけがギャラリーに並びます。<br>
+            投稿者プロフィールに、XやInstagramなどの案内も任意で載せられます。
+        </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.info("この評価結果をギャラリー候補に登録するには、下の「評価結果をギャラリーに残す」を押してください。公開は管理人の確認後に行われます。")
 
         already_entered = st.session_state.get("has_entered_current_image", False)
 
         if st.button(
-            "ギャラリーにエントリーする",
+            "評価結果をギャラリーに残す",
             disabled=already_entered,
             use_container_width=True,
          ):
@@ -1477,8 +1499,8 @@ if uploaded_file is not None:
 
                 st.session_state["has_entered_current_image"] = True
 
-                st.success("ギャラリー候補にエントリーしました。管理人の確認後に公開されます。")
-                st.info("画像と評価結果を保存しました。")
+                st.success("評価結果をギャラリー候補に保存しました。")
+                st.info("公開は管理人が内容を確認した後に行われます。AIコメントや印象値は、公開後にギャラリーから見返せます。")
 
                 st.rerun()
 
