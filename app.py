@@ -1465,7 +1465,7 @@ if uploaded_file is not None:
             padding:14px 16px;
             margin:12px 0 18px;
             color:#333;
-            font-size:16px;
+            font-size:14px;
             line-height:1.75;
         ">
         <div style="font-weight:800; margin-bottom:8px;">
